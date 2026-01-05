@@ -61,6 +61,15 @@ export const config = {
 export default async function handler(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
   const input = searchParams.get('input')?.trim();
+  const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
+
+  if (input) {
+    console.log("retuning input");
+    return Response.json({
+      input,
+      devMode: process.env.FB_RESOLVER_DEV_MODE,
+    });
+  }
 
   if (!input) {
     return new Response(
@@ -68,8 +77,6 @@ export default async function handler(req: Request): Promise<Response> {
       { status: 400 }
     );
   }
-
-  const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
 
   try {
     const normalized = normalizeInput(input);
