@@ -1,6 +1,62 @@
+const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
+
+
 export const config = {
   runtime: 'edge',
 };
+
+// export default async function handler(req: Request): Promise<Response> {
+//   const { searchParams } = new URL(req.url);
+//   const input = searchParams.get('input')?.trim();
+
+//   if (!input) {
+//     return new Response(
+//       JSON.stringify({ error: 'MISSING_INPUT' }),
+//       { status: 400 }
+//     );
+//   }
+
+//   try {
+//     const normalized = normalizeInput(input);
+
+//     // 1️⃣ Already numeric
+//     if (/^\d{8,}$/.test(normalized)) {
+//       return Response.json({ id: normalized });
+//     }
+
+//     // 2️⃣ profile.php?id=###
+//     const idFromQuery = extractProfileId(normalized);
+//     if (idFromQuery) {
+//       return Response.json({ id: idFromQuery });
+//     }
+
+//     // 3️⃣ Resolve via Graph API
+//     const accessToken =
+//       `${process.env.FB_APP_ID}|${process.env.FB_APP_SECRET}`;
+
+//     const graphRes = await fetch(
+//       `https://graph.facebook.com/v19.0/${encodeURIComponent(normalized)}?access_token=${accessToken}`
+//     );
+
+//     const data = await graphRes.json();
+
+//     if (data?.id) {
+//       return Response.json({ id: data.id });
+//     }
+
+//     return new Response(
+//       JSON.stringify({ error: 'NOT_FOUND' }),
+//       { status: 404 }
+//     );
+//   } catch (err) {
+//     console.error('Resolver error:', err);
+//     return new Response(
+//       JSON.stringify({ error: 'RESOLUTION_FAILED' }),
+//       { status: 500 }
+//     );
+//   }
+// }
+
 
 export default async function handler(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
@@ -13,8 +69,26 @@ export default async function handler(req: Request): Promise<Response> {
     );
   }
 
+  const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
+
   try {
     const normalized = normalizeInput(input);
+
+    // 🔧 DEV MODE SHORT-CIRCUIT (temporary)
+    if (DEV_MODE) {
+      const devMap: Record<string, string> = {
+        'TheQbanguy': '100047085038525',
+        '@TheQbanguy': '100047085038525',
+        'https://www.facebook.com/TheQbanguy': '100047085038525',
+      };
+
+      const devId = devMap[input] || devMap[normalized];
+
+      if (devId) {
+        console.warn('FB Resolver DEV MODE active');
+        return Response.json({ id: devId, dev: true });
+      }
+    }
 
     // 1️⃣ Already numeric
     if (/^\d{8,}$/.test(normalized)) {
@@ -27,12 +101,16 @@ export default async function handler(req: Request): Promise<Response> {
       return Response.json({ id: idFromQuery });
     }
 
-    // 3️⃣ Resolve via Graph API
+    // 3️⃣ Resolve via Graph API (URL resolver — REQUIRED)
     const accessToken =
       `${process.env.FB_APP_ID}|${process.env.FB_APP_SECRET}`;
 
+    const profileUrl = normalized.startsWith('http')
+      ? normalized
+      : `https://www.facebook.com/${normalized}`;
+
     const graphRes = await fetch(
-      `https://graph.facebook.com/v19.0/${encodeURIComponent(normalized)}?access_token=${accessToken}`
+      `https://graph.facebook.com/v19.0/?id=${encodeURIComponent(profileUrl)}&access_token=${accessToken}`
     );
 
     const data = await graphRes.json();
@@ -53,6 +131,7 @@ export default async function handler(req: Request): Promise<Response> {
     );
   }
 }
+
 
 /* ---------------- HELPERS (MUST BE IN THIS FILE) ---------------- */
 
