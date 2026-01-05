@@ -61,15 +61,6 @@ export const config = {
 export default async function handler(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
   const input = searchParams.get('input')?.trim();
-  const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
-
-  if (input) {
-    console.log("retuning input");
-    return Response.json({
-      input,
-      devMode: process.env.FB_RESOLVER_DEV_MODE,
-    });
-  }
 
   if (!input) {
     return new Response(
@@ -77,6 +68,8 @@ export default async function handler(req: Request): Promise<Response> {
       { status: 400 }
     );
   }
+
+  const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
 
   try {
     const normalized = normalizeInput(input);
@@ -86,6 +79,7 @@ export default async function handler(req: Request): Promise<Response> {
       const devMap: Record<string, string> = {
         'TheQbanguy': '100047085038525',
         '@TheQbanguy': '100047085038525',
+        'theqbanguy': '100047085038525',
         'https://www.facebook.com/TheQbanguy': '100047085038525',
       };
 
@@ -93,7 +87,12 @@ export default async function handler(req: Request): Promise<Response> {
 
       if (devId) {
         console.warn('FB Resolver DEV MODE active');
-        return Response.json({ id: devId, dev: true });
+        return Response.json({
+          id: devId,
+          dev: true,
+          input,
+          normalized,
+        });
       }
     }
 
@@ -108,7 +107,7 @@ export default async function handler(req: Request): Promise<Response> {
       return Response.json({ id: idFromQuery });
     }
 
-    // 3️⃣ Resolve via Graph API (URL resolver — REQUIRED)
+    // 3️⃣ Resolve via Graph API (URL resolver)
     const accessToken =
       `${process.env.FB_APP_ID}|${process.env.FB_APP_SECRET}`;
 
@@ -138,6 +137,7 @@ export default async function handler(req: Request): Promise<Response> {
     );
   }
 }
+
 
 
 /* ---------------- HELPERS (MUST BE IN THIS FILE) ---------------- */
