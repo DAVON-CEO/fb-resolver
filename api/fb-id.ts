@@ -1,3 +1,7 @@
+export const config = {
+  runtime: 'edge',
+};
+
 export default async function handler(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
   const input = searchParams.get('input')?.trim();
