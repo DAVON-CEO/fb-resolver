@@ -1,6 +1,6 @@
 // const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
 
-export const runtime = 'nodejs';
+// export const runtime = 'nodejs';
 
 // export const config = {
 //   runtime: 'edge',
@@ -71,10 +71,9 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   // const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
-  // const DEV_MODE = true; // 🔥 FORCE DEV MODE
-  const DEV_MODE =
-  process.env.VERCEL_ENV !== 'production' &&
-  process.env.FB_RESOLVER_DEV_MODE === 'true';
+  const DEV_MODE = true; // 🔥 FORCE DEV MODE
+  // const DEV_MODE = process.env.VERCEL_ENV !== 'production' && process.env.FB_RESOLVER_DEV_MODE === 'true';
+  
 
 
   try {
