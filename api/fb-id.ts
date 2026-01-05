@@ -1,8 +1,3 @@
-// import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-
-
-const FB_GRAPH = 'https://graph.facebook.com/v19.0';
 export default async function handler(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
   const input = searchParams.get('input')?.trim();
@@ -17,15 +12,18 @@ export default async function handler(req: Request): Promise<Response> {
   try {
     const normalized = normalizeInput(input);
 
+    // 1️⃣ Already numeric
     if (/^\d{8,}$/.test(normalized)) {
       return Response.json({ id: normalized });
     }
 
+    // 2️⃣ profile.php?id=###
     const idFromQuery = extractProfileId(normalized);
     if (idFromQuery) {
       return Response.json({ id: idFromQuery });
     }
 
+    // 3️⃣ Resolve via Graph API
     const accessToken =
       `${process.env.FB_APP_ID}|${process.env.FB_APP_SECRET}`;
 
@@ -43,7 +41,8 @@ export default async function handler(req: Request): Promise<Response> {
       JSON.stringify({ error: 'NOT_FOUND' }),
       { status: 404 }
     );
-  } catch {
+  } catch (err) {
+    console.error('Resolver error:', err);
     return new Response(
       JSON.stringify({ error: 'RESOLUTION_FAILED' }),
       { status: 500 }
@@ -51,7 +50,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 }
 
-
+/* ---------------- HELPERS (MUST BE IN THIS FILE) ---------------- */
 
 function normalizeInput(input: string): string {
   let clean = input.replace(/^@/, '').trim();
