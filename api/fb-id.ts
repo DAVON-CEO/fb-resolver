@@ -1,5 +1,6 @@
-const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
+// const DEV_MODE = process.env.FB_RESOLVER_DEV_MODE === 'true';
 
+export const runtime = 'nodejs';
 
 // export const config = {
 //   runtime: 'edge',
